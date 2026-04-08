@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, name, phone, referralCode, referredBy, packageAmount, packageActive, walletBalance, totalEarned, totalWithdrawn, teamSize, directReferrals, level, dailyRecruitCount, dailyRecruitDate, joinedAt, isBlocked, withdrawalMethod, milestonesReached, role
+    //
+    // Collection: transactions
+    // Fields: txnId, userId, type, amount, status, description, createdAt
+    //
+    // Collection: withdrawalRequests
+    // Fields: requestId, userId, userName, amount, method, accountDetails, status, requestedAt, processedAt
+    //
+    // Collection: adminSettings
+    // Fields: totalUsers, totalMoneyDistributed, appVersion, maintenanceMode, announcement
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "harshmehta12317@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'referralCode', 'packageAmount', 'packageActive', 'walletBalance', 'totalEarned', 'totalWithdrawn', 'teamSize', 'directReferrals', 'level', 'dailyRecruitCount', 'joinedAt', 'isBlocked', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.referralCode is string &&
+             data.packageAmount is number &&
+             data.packageActive is bool &&
+             data.walletBalance is number &&
+             data.totalEarned is number &&
+             data.totalWithdrawn is number &&
+             data.teamSize is number &&
+             data.directReferrals is number &&
+             data.level in ['none', 'silver', 'gold', 'diamond'] &&
+             data.dailyRecruitCount is number &&
+             data.isBlocked is bool &&
+             data.role in ['user', 'admin'];
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['txnId', 'userId', 'type', 'amount', 'status', 'description', 'createdAt']) &&
+             data.txnId is string &&
+             data.userId is string &&
+             data.type in ['referral_bonus', 'daily_bonus', 'monthly_bonus', 'level_salary', 'withdrawal'] &&
+             data.amount is number &&
+             data.status in ['completed', 'pending', 'rejected'] &&
+             data.description is string;
+    }
+
+    function isValidWithdrawal(data) {
+      return data.keys().hasAll(['requestId', 'userId', 'userName', 'amount', 'method', 'accountDetails', 'status', 'requestedAt']) &&
+             data.requestId is string &&
+             data.userId is string &&
+             data.userName is string &&
+             data.amount is number &&
+             data.method == 'bank' &&
+             data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+    }
+
+    match /transactions/{txnId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAdmin(); // Only admin or cloud functions should create transactions
+      allow update: if isAdmin();
+    }
+
+    match /withdrawalRequests/{requestId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidWithdrawal(request.resource.data) && request.auth.uid == request.resource.data.userId;
+      allow update: if isAdmin();
+    }
+
+    match /adminSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

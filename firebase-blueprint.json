@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App user profile and earnings data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "packageAmount": { "type": "number" },
+        "packageActive": { "type": "boolean" },
+        "walletBalance": { "type": "number" },
+        "totalEarned": { "type": "number" },
+        "totalWithdrawn": { "type": "number" },
+        "teamSize": { "type": "number" },
+        "directReferrals": { "type": "number" },
+        "level": { "type": "string", "enum": ["none", "silver", "gold", "diamond"] },
+        "dailyRecruitCount": { "type": "number" },
+        "dailyRecruitDate": { "type": "string", "format": "date-time" },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "isBlocked": { "type": "boolean" },
+        "withdrawalMethod": { "type": "object" },
+        "milestonesReached": { "type": "array", "items": { "type": "number" } },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["uid", "phone", "referralCode", "packageAmount", "packageActive", "walletBalance", "totalEarned", "totalWithdrawn", "teamSize", "directReferrals", "level", "dailyRecruitCount", "joinedAt", "isBlocked", "role"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record",
+      "type": "object",
+      "properties": {
+        "txnId": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["referral_bonus", "daily_bonus", "monthly_bonus", "level_salary", "withdrawal"] },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["completed", "pending", "rejected"] },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["txnId", "userId", "type", "amount", "status", "description", "createdAt"]
+    },
+    "WithdrawalRequest": {
+      "title": "WithdrawalRequest",
+      "description": "User request to withdraw funds",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["bank"] },
+        "accountDetails": { "type": "object" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "processedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["requestId", "userId", "userName", "amount", "method", "accountDetails", "status", "requestedAt"]
+    },
+    "AdminSettings": {
+      "title": "AdminSettings",
+      "description": "Global app settings and stats",
+      "type": "object",
+      "properties": {
+        "totalUsers": { "type": "number" },
+        "totalMoneyDistributed": { "type": "number" },
+        "appVersion": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "announcement": { "type": "string" }
+      },
+      "required": ["totalUsers", "totalMoneyDistributed", "appVersion", "maintenanceMode"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/transactions/{txnId}": { "schema": "Transaction", "description": "Transaction logs" },
+    "/withdrawalRequests/{requestId}": { "schema": "WithdrawalRequest", "description": "Withdrawal requests" },
+    "/adminSettings/global": { "schema": "AdminSettings", "description": "Global settings" }
+  }
+}
