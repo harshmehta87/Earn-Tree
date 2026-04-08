@@ -4,6 +4,94 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Google AI Studio App</title>
+    <script>
+      (function() {
+        console.log('Applying ultimate global fixes...');
+        
+        function makeWritable(obj, prop) {
+          try {
+            const original = obj[prop];
+            let current = original;
+            
+            // Try to find the descriptor in the prototype chain
+            let target = obj;
+            let descriptor = null;
+            while (target && !descriptor) {
+              descriptor = Object.getOwnPropertyDescriptor(target, prop);
+              if (!descriptor) target = Object.getPrototypeOf(target);
+            }
+
+            // If we found it and it's not writable/settable
+            if (descriptor && (!descriptor.writable || !descriptor.set)) {
+              console.log('Property ' + prop + ' is read-only on ', target);
+              
+              // Try to redefine it on the object itself to shadow the prototype
+              try {
+                Object.defineProperty(obj, prop, {
+                  get: function() { return current; },
+                  set: function(v) { 
+                    console.log('Intercepted ' + prop + ' overwrite');
+                    current = v; 
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+                console.log('Successfully shadowed ' + prop + ' on ', obj);
+              } catch (e) {
+                console.warn('Failed to shadow ' + prop + ' on ', obj, e);
+                
+                // If shadowing fails, try to redefine on the prototype if configurable
+                if (target && descriptor.configurable) {
+                  try {
+                    Object.defineProperty(target, prop, {
+                      get: function() { return current; },
+                      set: function(v) { 
+                        console.log('Intercepted ' + prop + ' overwrite on prototype');
+                        current = v; 
+                      },
+                      configurable: true,
+                      enumerable: true
+                    });
+                    console.log('Successfully redefined ' + prop + ' on prototype');
+                  } catch (e2) {
+                    console.error('Failed to redefine ' + prop + ' on prototype', e2);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error in makeWritable for ' + prop, e);
+          }
+        }
+
+        // Apply fixes
+        makeWritable(window, 'fetch');
+        makeWritable(self, 'fetch');
+        makeWritable(globalThis, 'fetch');
+
+        // Polyfill global
+        if (typeof window.global === 'undefined') {
+          window.global = window;
+        }
+
+        // Global error listener with user notification
+        window.addEventListener('error', function(event) {
+          if (event.message && event.message.indexOf('fetch') !== -1) {
+            console.error('CRITICAL FETCH ERROR:', event.error ? event.error.stack : event.message);
+            
+            // If it's an extension error, show a helpful message
+            if (event.filename && event.filename.startsWith('chrome-extension:')) {
+              const msg = document.createElement('div');
+              msg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fee2e2;color:#991b1b;padding:1rem;z-index:9999;text-align:center;font-family:sans-serif;border-bottom:1px solid #f87171;';
+              msg.innerHTML = '<strong>Extension Conflict Detected:</strong> A browser extension (likely Talend API Tester) is crashing the app. Please try <strong>Incognito Mode</strong> or disable the extension to resolve this.';
+              document.body.appendChild(msg);
+            }
+          }
+        });
+        
+        console.log('Ultimate global fixes applied.');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

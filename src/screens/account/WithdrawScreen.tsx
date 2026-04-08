@@ -23,11 +23,11 @@ const WithdrawScreen: React.FC = () => {
   const [holderName, setHolderName] = useState(user?.withdrawalMethod?.bank?.holderName || '');
 
   useEffect(() => {
-    const fetchRequests = async () => {
+    const loadRequests = async () => {
       const all = await firestoreService.getAllWithdrawalRequests();
       setRequests(all.filter(r => r.userId === user?.uid).sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()));
     };
-    fetchRequests();
+    loadRequests();
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {

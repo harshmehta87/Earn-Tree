@@ -15,7 +15,7 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       // Initialize settings if they don't exist
       try {
         const settingsRef = doc(db, 'adminSettings', 'global');
@@ -40,7 +40,7 @@ const AdminDashboard: React.FC = () => {
       setLoading(false);
     };
     
-    fetchData();
+    loadData();
     const unsubscribeSettings = firestoreService.getAdminSettings(setSettings);
     return () => unsubscribeSettings();
   }, []);
